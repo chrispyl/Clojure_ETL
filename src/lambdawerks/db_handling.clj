@@ -19,16 +19,21 @@
 (defn str-to-date [s]
 	(c/to-sql-date s))
 
-(defn example-select []
+(defn multi-select [amount offset]
 	(kcore/select person
-		(kcore/limit 5)))
+		(kcore/limit amount)
+		(kcore/offset offset)))
 
+;example result for 400000 (1 400001 800001 1200001 1600001 2000001 2400001 2800001 3200001 3600001 4000001 4400001 4800001 5200001 5600001 6000001 6400001 6800001 7200001 7600001 8000001 8400001 8800001 9200001 9600001 10000001)		
+(defn offsets-for-select [records-in-db select-size]
+	(range 1 records-in-db select-size))		
+		
 (defn example-select-2 []		
 	(kcore/select person
 		(kcore/where (and {:fname "TA'KYA"}
 						{:lname "RIVERA COTTO"}
-						{:dob (str-to-date "1912-05-04")}))))
-
+						{:dob (str-to-date "1912-05-04")}))))						
+						
 ;(kcore/insert person
 ;	(kcore/values [{:fname "chris" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "6940686949"}
 ;				 {:fname "theo" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "69508090"}]))
