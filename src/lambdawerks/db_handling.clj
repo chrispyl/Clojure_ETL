@@ -1,7 +1,8 @@
 (ns lambdawerks.db-handling
 	(:require [korma.db :as kdb]
 			 [korma.core :as kcore]
-			 [clj-time.coerce :as c]))
+			 [clj-time.coerce :as c]
+			 [clojure.java.jdbc :as j]))
 	
 (def db-spec {:dbtype "postgresql"
 			:subprotocol "postgresql"
@@ -19,6 +20,16 @@
 (defn str-to-date [s]
 	(c/to-sql-date s))
 
+(defn multi-insert [records]
+	(kcore/insert person
+		(kcore/values (mapv #(assoc % :dob (str-to-date (% :dob))) records))))	
+
+(defn multi-update [records]
+	(let [sql-string "UPDATE person SET phone = ? WHERE fname = ? AND lname = ? AND dob = ?"
+		 vectors (map #(vector (% :phone) (% :fname) (% :lname) (% :dob)) records)
+		 final-vector (reduce #(conj % %2) [sql-string] vectors)]
+		(j/db-do-prepared db-spec final-vector {:multi? true})))	
+	
 (defn multi-select [amount offset]
 	(kcore/select person
 		(kcore/limit amount)
