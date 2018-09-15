@@ -7,8 +7,7 @@
 	(take take-num s))	
 	
 (defn get-cores []
-	(.availableProcessors (Runtime/getRuntime))
-	1)
+	(.availableProcessors (Runtime/getRuntime)))
 	
 (defn work-sharing [tasks cores]
   (let [core-num cores

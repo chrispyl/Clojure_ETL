@@ -11,34 +11,24 @@
 	(zipmap (map #(dissoc % :phone) maps) (map #(% :phone) maps)))  		
 		
 (defn crosscheck-records [db-records xml-record-holder update-repo]
-
-	;(println (class db-records) (class @xml-record-holder))
-	;(Thread/sleep (* 1000 (rand-int 20)))
-	;(println (map #(class ((first @xml-record-holder) %)) (keys (first @xml-record-holder))))
-	;(println (map #(class ((first db-records) %)) (keys (first db-records))))
-	;(println "db "  (first db-records))
-	(Thread/sleep 50)
+	;(Thread/sleep (* 1000 (rand-int 10)))
+	;(println (java.util.Date.))
+	;(println "waiting for check")
 	(println "intersection " (count (clojure.set/intersection @xml-record-holder db-records)))
 	(println "differencies " (count (clojure.set/difference @xml-record-holder db-records)))
-	;(println (@xml-record-holder {:fname "00226501", :lname "SUPRISSE", :dob "2007-05-10", :phone "5873733594"}))
-	;(println (db-records {:fname "00226501", :lname "SUPRISSE", :dob "2007-05-10", :phone "5873733594"}))
-	(let [differencies (clojure.set/difference @xml-record-holder db-records)
-		 xml-maps (maps-transformation @xml-record-holder)
-		 ;_ (println "xml-map " (first xml-maps))
+	
+	(let [xml-maps (maps-transformation @xml-record-holder)
 		 db-maps (maps-transformation db-records)
-		 ;_ (println "db-map " (first db-maps))
-		 wrong-phones (filter #(if-let [db-phone (db-maps (first %))] (not= db-phone (second %)) false) xml-maps) ;wrong phones, so they go to update
-		 ;groups (group-by #(not (nil? (db-maps (first %)))) xml-maps)
-		 ]
-		 ;(println "true" (count (groups true)))
-		 ;(println "false" (count (groups false)))
-		 ;(println (keys groups))
+		 wrong-phones (filter #(if-let [db-phone (db-maps (first %))] (not= db-phone (second %)) false) xml-maps)] ;wrong phones, so they go to update
+
 		(dorun 
-			(map #(swap! update-repo conj (assoc (first %) :phone (second %))) wrong-phones))
-		 
+			(map #(swap! update-repo conj (assoc (first %) :phone (second %))) wrong-phones))		 
 		(apply swap! xml-record-holder disj (apply conj 
 											(mapv #(assoc (first %) :phone (second %)) wrong-phones) 
-											(clojure.set/intersection @xml-record-holder db-records)))))
+											(clojure.set/intersection @xml-record-holder db-records)))
+	;(println "check done")
+	;(println (java.util.Date.)
+	)))
 		
 (defn distribute-work [db-records xml-record-holders update-repo]
 	(doall
@@ -71,14 +61,11 @@
 	(dorun
 		(map #(reset! % #{}) xml-record-holders)))			 
 			 
-(defn fill-xml-record-holders [xml-record-holders partitioned-xml-records]
+(defn fill-xml-record-holders [partitioned-xml-records xml-record-holders]
 	(dorun
 		(map #(apply swap! % conj %2) xml-record-holders partitioned-xml-records)))			 
 			 
 (defn archive-missing-records [xml-record-holders insert-repo]
-	;(doseq [r xml-record-holders]
-	;		(doall 
-	;			(map #(println "missing record: " %) @r)))
 	(dorun
 		(map #(apply swap! insert-repo conj @%) xml-record-holders)))
 			 
@@ -94,30 +81,25 @@
 		 update-repo (atom [])
 		 xml-record-holders (take (get-cores) (repeatedly #(atom #{})))]
 		(dotimes [iteration db-traversals]
-			(let [xml-records (extract-xml iteration xml-batch-size)
-				 partitioned-xml-records (work-sharing xml-records (get-cores))]
-				 
-				(archive-missing-records xml-record-holders insert-repo) ;insert stuff after a db complete traversal
-				
-				(empty-xml-record-holders xml-record-holders) ;from the previous full db traversal
-				(fill-xml-record-holders xml-record-holders partitioned-xml-records) 
-				
-				(check-repos insert-repo update-repo repo-limit) ;check if repos have >1000 and empty them if true
-				
+				(println "insert-repo: " (count @insert-repo))			
+				(archive-missing-records xml-record-holders insert-repo) ;insert stuff after a db complete traversal				
+				(empty-xml-record-holders xml-record-holders) ;from the previous full db traversal				
+				(-> iteration
+					(extract-xml xml-batch-size)
+					(work-sharing (get-cores))
+					(fill-xml-record-holders xml-record-holders)) 				
+				(check-repos insert-repo update-repo repo-limit) ;check if repos have >1000 and empty them if true				
 				(doseq [db-offset db-offsets]
-					(let [db-records (-> db-offset
+					(let [futures (-> db-offset
 									  (multi-select select-size)
 									  (format-dates)
-									  (set))
-						 futures (distribute-work db-records xml-record-holders update-repo)]
-						 (println "offset: " db-offset ", records: " (count db-records) ", insert-repo: " (count @insert-repo) ", update-repo: " (count @update-repo) ", xml-holder: " (count @(first xml-record-holders)))
+									  (set)
+									  (distribute-work xml-record-holders update-repo))]
+						 (println "offset: " db-offset ", update-repo: " (count @update-repo) ", xml-holder: " (count @(first xml-record-holders)))
 						 (dorun
-							(map deref futures))))))
-		(println "reach 1")					
+							(map deref futures)))))
 		(archive-missing-records xml-record-holders insert-repo) ;after the last db traversal we have to insert the missing records in the repo
-		(println "reach 2")
 		(multi-insert @insert-repo)
-		(println "reach 3")
 		(multi-update @update-repo)))
   
   
