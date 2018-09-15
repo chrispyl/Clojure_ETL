@@ -14,23 +14,47 @@
             :sslfactory "org.postgresql.ssl.NonValidatingFactory"})	
 
 (kdb/defdb korma-db db-spec)			
-
 (kcore/defentity person)
 
 (defn str-to-date [s]
 	(c/to-sql-date s))
-
-(defn multi-insert [records]
-	(kcore/insert person
-		(kcore/values (mapv #(assoc % :dob (str-to-date (% :dob))) records))))	
+	
+(defn multi-insert 
+	([records]
+		(println "inserting to db")
+		(doseq [record-partition (partition-all 5000 records)]
+			(kcore/insert person
+				(kcore/values (mapv #(assoc % :dob (str-to-date (% :dob))) record-partition)))))
+	([records entity]
+		(doseq [record-partition (partition-all 5000 records)]
+			(kcore/insert entity
+				(kcore/values (mapv #(assoc % :dob (str-to-date (% :dob))) record-partition))))))	
 
 (defn multi-update [records]
-	(let [sql-string "UPDATE person SET phone = ? WHERE fname = ? AND lname = ? AND dob = ?"
-		 vectors (map #(vector (% :phone) (% :fname) (% :lname) (% :dob)) records)
-		 final-vector (reduce #(conj % %2) [sql-string] vectors)]
-		(j/db-do-prepared db-spec final-vector {:multi? true})))	
+	(println "updating db")
+	(j/execute! db-spec
+		(j/create-table-ddl :temp_person
+							 [[:fname "character varying"]
+							  [:lname "character varying"]
+							  [:dob "date"]
+							  [:phone "character(10)"]]))
 	
-(defn multi-select [amount offset]
+	(kcore/defentity temp_person)
+	
+	(multi-insert records temp_person)
+			
+	(kcore/exec-raw ["UPDATE person
+					SET phone = temp_person.phone
+					FROM temp_person
+					WHERE person.fname = temp_person.fname
+						AND person.lname = temp_person.lname
+						AND person.dob = temp_person.dob;"])
+	
+	(j/execute! db-spec
+		(j/drop-table-ddl :temp_person)))			
+			
+	
+(defn multi-select [offset amount]
 	(kcore/select person
 		(kcore/limit amount)
 		(kcore/offset offset)))
@@ -41,19 +65,31 @@
 		
 (defn example-select-2 []		
 	(kcore/select person
-		(kcore/where (and {:fname "TA'KYA"}
-						{:lname "RIVERA COTTO"}
-						{:dob (str-to-date "1912-05-04")}))))						
-						
-;(kcore/insert person
-;	(kcore/values [{:fname "chris" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "6940686949"}
-;				 {:fname "theo" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "69508090"}]))
+		(kcore/where (and {:fname "00226501"}
+						{:lname "SUPRISSE"}
+						{:dob (str-to-date "2007-05-10")}))))						
 
-;(kcore/delete person
-;  (kcore/where 
-;		(or {:fname [= "chris"]}
-;			{:fname [= "theo"]}))) 
-				 
-;(kcore/update person
-;  (kcore/set-fields {:phone "69508091"})
-;  (kcore/where {:fname [= "theo"]}))	
+(defn a []						
+(kcore/insert person
+	(kcore/values [{:fname "chris" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "6940686949"}
+				 {:fname "theo" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "69508090"}
+				 {:fname "skat" :lname "pylianidis" :dob (str-to-date "1990-01-01") :phone "69598090"}])))
+
+(defn s []				 
+(kcore/delete person
+  (kcore/where 
+		(or {:fname [= "chris"]}
+			{:fname [= "theo"]}
+			{:fname [= "skat"]})))) 
+(defn v []
+	 (j/execute! db-spec ["UPDATE person SET phone = ? WHERE fname = ? AND lname = ? AND dob = ?" "69508091" "theo" "pylianidis" (str-to-date "1990-01-01")]))
+
+(defn b []				 
+	(kcore/update person
+		(kcore/set-fields {:phone "69508091"})
+		(kcore/where (or {:fname [= "theo"]}
+						{:lname [= "pylianidis"]}
+						{:dob [= (str-to-date "1990-01-01")]}))
+		(kcore/where (or{:fname [= "chris"]}
+						{:lname [= "pylianidis"]}
+						{:dob [= (str-to-date "1990-01-01")]}))))	
