@@ -38,7 +38,9 @@
 				
 (defn check-repos [insert-repo update-repo repo-limit]
 	(dorun
-		(map #(when (>= (count @%) repo-limit) (do (%2 @%) (reset! % []))) 
+		(map #(when (>= (count @%) repo-limit) 
+					(%2 @%) 
+					(reset! % [])) 
 			 [insert-repo update-repo]
 			 [multi-insert multi-update])))				
 
@@ -62,9 +64,9 @@
 		 insert-repo (atom [])
 		 update-repo (atom [])
 		 xml-record-holder (atom #{})]
-		(dotimes [iteration db-traversals]
-				(println "insert-repo: " (count @insert-repo))			
+		(dotimes [iteration db-traversals]			
 				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db complete traversal				
+				(println "insert-repo: " (count @insert-repo))
 				(empty-xml-record-holder xml-record-holder) ;from the previous full db traversal				
 				(-> iteration
 					(extract-xml xml-batch-size)
