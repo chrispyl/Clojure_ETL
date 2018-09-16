@@ -1,27 +1,28 @@
 (ns lambdawerks.core
 	(:require [lambdawerks.xml-handling :refer [read-xml-chunk xml-record-traversal]]
-			 [lambdawerks.db-handling :refer [multi-select multi-insert multi-update offsets-for-select str-to-date]]
+			 [lambdawerks.db-handling :refer [multi-select multi-insert multi-update offsets-for-select str-to-date add-person-ids drop-person-ids]]
 			 [lambdawerks.load-statistics :refer [memory-usage cpu-usage]]
 			 [clj-time.coerce :as c])
   (:gen-class))
 
 ;maps is a set containing maps
-(defn maps-transformation [maps] 
+(defn maps-transformation [maps] ;this wont work because we also have an id field
 	(zipmap (map #(dissoc % :phone) maps) (map #(% :phone) maps)))  		
 		
 (defn crosscheck-records [db-records xml-record-holder update-repo]
 
-	(println "intersection " (count (clojure.set/intersection @xml-record-holder db-records)))
-	(println "differencies " (count (clojure.set/difference @xml-record-holder db-records)))
+	;(println "intersections " (count (clojure.set/intersection @xml-record-holder db-records)))
+	;(println "differencies " (count (clojure.set/difference @xml-record-holder db-records)))
 	
-	(let [xml-maps (maps-transformation @xml-record-holder)
-		 db-maps (maps-transformation db-records)
-		 wrong-phones (filter #(if-let [db-phone (db-maps (first %))] (not= db-phone (second %)) false) xml-maps)] ;wrong phones, so they go to update
-
-		(dorun 
-			(map #(swap! update-repo conj (assoc (first %) :phone (second %))) wrong-phones))		 
+	(let [db-maps (maps-transformation db-records)
+		 wrong-phones (filter #(if-let [db-phone (db-maps (dissoc % :phone))] (not= db-phone (% :phone)) false) @xml-record-holder)] ;wrong phones, so they go to update
+		;(println "wrong phones " (count wrong-phones))
+		;(println "wrong phone " (first wrong-phones))
+		;(println "intersection " (first (clojure.set/intersection @xml-record-holder db-records)))
+		            
+		(apply swap! update-repo conj wrong-phones)
 		(apply swap! xml-record-holder disj (apply conj 
-											(mapv #(assoc (first %) :phone (second %)) wrong-phones) 
+											wrong-phones 
 											(clojure.set/intersection @xml-record-holder db-records)))))	
 
 (defn count-db-traversals [records-in-xml xml-batch-size]
@@ -64,24 +65,30 @@
 		 insert-repo (atom [])
 		 update-repo (atom [])
 		 xml-record-holder (atom #{})]
+		 (println "adding ids")
+		 (add-person-ids)
+		 (println "ids set")
 		(dotimes [iteration db-traversals]			
 				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db complete traversal				
 				(println "insert-repo: " (count @insert-repo))
 				(empty-xml-record-holder xml-record-holder) ;from the previous full db traversal				
-				(-> iteration
-					(extract-xml xml-batch-size)
-					(fill-xml-record-holder xml-record-holder)) 				
-				(check-repos insert-repo update-repo repo-limit) ;check if repos have >1000 and empty them if true				
-				(doseq [db-offset db-offsets]
-					(-> db-offset
-					  (multi-select select-size)
-					  (format-dates)
-					  (set)
-					  (crosscheck-records xml-record-holder update-repo))
-					(println "offset: " db-offset ", update-repo: " (count @update-repo) ", xml-holder: " (count @xml-record-holder))))
+				 ;check if repos have >1000 and empty them if true
+				(let [xml-future (future (-> iteration
+										(extract-xml xml-batch-size)
+										(fill-xml-record-holder xml-record-holder)))
+					 repos-future (future (check-repos insert-repo update-repo repo-limit))]				
+					@xml-future)		
+					(doseq [db-offset db-offsets]
+						(-> db-offset
+						  (multi-select select-size)
+						  (format-dates)
+						  (set)
+						  (crosscheck-records xml-record-holder update-repo))
+						(println "offset: " db-offset ", update-repo: " (count @update-repo) ", xml-holder: " (count @xml-record-holder))))
 		(archive-missing-records xml-record-holder insert-repo) ;after the last db traversal we have to insert the missing records in the repo
 		(multi-insert @insert-repo)
-		(multi-update @update-repo)))
+		(multi-update @update-repo)
+		(drop-person-ids)))
   
   
 (defn -main [& args]

@@ -9,8 +9,7 @@
 			:host "localhost"
             :user "postgres"
             :password (slurp "C:/Users/Christos/Desktop/password.txt")
-            :ssl false
-            :sslfactory "org.postgresql.ssl.NonValidatingFactory"})	
+            :ssl false})	
 
 (kdb/defdb korma-db db-spec)			
 (kcore/defentity person)
@@ -20,10 +19,18 @@
 
 ;example result for 400000 (1 400001 800001 1200001 1600001 2000001 2400001 2800001 3200001 3600001 4000001 4400001 4800001 5200001 5600001 6000001 6400001 6800001 7200001 7600001 8000001 8400001 8800001 9200001 9600001 10000001)		
 (defn offsets-for-select [records-in-db select-size]
-	(range 1 records-in-db select-size))	
+	(range 0 records-in-db select-size))	
+
+(defn add-person-ids []
+	(kcore/exec-raw ["ALTER TABLE person ADD COLUMN id SERIAL PRIMARY KEY;"]))
+
+(defn drop-person-ids []
+	(kcore/exec-raw ["ALTER TABLE person DROP COLUMN id;"]))	
 	
 (defn multi-select [offset amount]
 	(kcore/select person
+		(kcore/fields :fname :lname :dob :phone)
+		(kcore/order :id)
 		(kcore/limit amount)
 		(kcore/offset offset)))	
 	
@@ -39,9 +46,11 @@
 			(doseq [record-partition (partition-all insert-limit records)]
 				(kcore/insert entity
 					(kcore/values (mapv #(assoc % :dob (str-to-date (% :dob))) record-partition)))))))	
-
+			
+					
 (defn multi-update [records]
 	(println "updating db")
+	
 	(kcore/exec-raw ["CREATE TABLE temp_person
 					(
 					  fname character varying,
@@ -51,7 +60,6 @@
 					);"])
 	
 	(kcore/defentity temp_person)
-	
 	(multi-insert records temp_person)
 			
 	(kcore/exec-raw ["UPDATE person
