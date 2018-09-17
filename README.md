@@ -39,5 +39,24 @@ To create the queries the library Korma was used. It was selected over clojure.j
 
 ```UPDATE``` :To the updates now, updates were very if we tried to do them with the update query. The solution was to create a temporary table, insert them there and from there update the ```person``` table.
 
+## CPU and memory utilization
 
+The CPU and memory utilization are logged during the operation and saved to a file named ```load statistics.txt``` at the end.
+But we can get a more clear picture by looking at the plots produced by the VisualVM profiler.
+
+In the picture below we can observe the heap utilization after some db traversals. At the beggining of the application, the size of the heap is around 300MB. Suddenly, a spike expands it to 1000MB. This is the moment when we extract records from the update file which can't fit in the current heap and so it has to expands. Right after, the size of the heap goes to 1750 MB and that is the moment when we retrieve records from the db. Sudden drops to around 250MB (red color) happen when th GC kicks in to collect retrieved records from the db or file update records which we don't need anymore. As time passes by, we can observe that these blue spikes reach higher and make the heap grow little by little (black lines). I guess that this is happening because there are references that need a 'stop the world' garbage colletion which is not needed at that point.
+![heap](https://github.com/chrispyl/lambdawerks_test/blob/master/images/heap.jpg)
+
+Regarding the CPU utilization we can see that the spikes happen when the GC kicks in and also when we query the database.
+![CPU](https://github.com/chrispyl/lambdawerks_test/blob/master/images/cpu.jpg)
+
+## Results
+
+|Inserts|Updates|
+|-------|-------|
+|500.035|499.982|
+
+## Misc
+
+By default, the maximum heap is 1/4 of the available RAM. If we wanted to get a significant reduction in the execution time of the operation we could set the flags for the JVM to use more heap and specifically a fixed heap from the beggining in order to avoid the heap allocation time ```Xmx12G Xms12G```.
 
