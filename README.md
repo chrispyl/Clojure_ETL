@@ -60,6 +60,8 @@ The results after completing the whole operation.
 |-------|-------|
 |500.035|499.982|
 
+With ```db_batch_size = 400.000``` and ```file_update_batch_size = 100.000``` (so we have 15 db traversals), the whole operation took ~38 min.
+
 ## Misc
 
 By default, the maximum heap is 1/4 of the available RAM. If we wanted to get a significant reduction in the execution time of the operation we could set the flags for the JVM to use more heap and specifically a fixed heap from the beggining in order to avoid the heap allocation time ```Xmx12G Xms12G```.
