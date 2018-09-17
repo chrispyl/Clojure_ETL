@@ -1,7 +1,7 @@
 (ns lambdawerks.xml-handling
 	(:require [clojure.data.xml :as xml]
 			 [clojure.java.io :as io]
-			 [lambdawerks.utilities :refer [altered-drop altered-take]]))
+			 [lambdawerks.utilities :refer [flip]]))
 			 			 
 (defn read-xml-chunk
 	"Takes two long numbers representing how many xml records we want
@@ -12,8 +12,8 @@
 		(-> rdr
 			(xml/parse)
 			(:content)
-			(altered-drop drop-num)
-			(altered-take take-num)
+			((flip drop) drop-num)
+			((flip take) take-num)
 			(vec))))
 
 (defn xml-record-traversal 

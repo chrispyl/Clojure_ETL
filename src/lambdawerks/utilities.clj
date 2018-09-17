@@ -30,15 +30,10 @@
 	This function is used only for side effects and the result is thrown away."
 	[stats-holder s]
 	(swap! stats-holder conj (create-load-map s)))			
-		
-(defn altered-drop 
-	"Takes a sequence and a long number and applies these arguments 
-	in the opposite order in the drop function."
-	[s drop-num]
-	(drop drop-num s))
 
-(defn altered-take 
-	"Takes a sequence and a long number and applies these arguments 
-	in the opposite order in the take function."
-	[s take-num]
-	(take take-num s))	
+(defn flip 
+	"Takes a function. Returns a function performing the same operation as the input
+	function but which accepts its arguments in reverse order."
+	[f]
+  (fn [& xs]
+    (apply f (reverse xs))))

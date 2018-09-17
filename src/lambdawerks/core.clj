@@ -37,7 +37,7 @@
 
 (defn format-dates 
 	"Takes a collection of maps representing records in the person table. Returns a vector
-	of maps, where the date instances have been replaced by strings of the date part only."
+	of maps, where the date instances have been replaced by strings of the YYYY-MM-DD part only."
 	[db-records]
 	(mapv #(update % :dob (fn [date] (if date (.toString date) nil))) db-records))				
 
