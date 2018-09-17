@@ -1,6 +1,6 @@
 ## Usage
 
-To begin the operation call the ```update-db``` function in ```core.clj```. During the opearation messages describing the stage of the operation will be printed in the console.
+To begin the operation call the ```update-db``` function in ```core.clj```. During the operation, messages describing the its stage will be printed in the console.
 
 ## Project structure
 
@@ -35,7 +35,7 @@ To create the queries the library Korma was used. It was selected over clojure.j
 
 ```SELECT```: In order to retrieve different records from the db every time, an extra ```id``` collumn was inserted for the duration of the whole operation. 
 
-```INSERT``` : Regarding the insertions, they happen fast and only problem was that they had to be sent in batches of 5000, otherwise the connection to the db was being lost.
+```INSERT``` : Regarding the insertions, they happen fast and the only problem was that they had to be sent in batches of 5000, otherwise the connection to the db was being lost.
 
 ```UPDATE``` :To the updates now, updates were very if we tried to do them with the update query. The solution was to create a temporary table, insert them there and from there update the ```person``` table.
 
@@ -44,13 +44,17 @@ To create the queries the library Korma was used. It was selected over clojure.j
 The CPU and memory utilization are logged during the operation and saved to a file named ```load statistics.txt``` at the end.
 But we can get a more clear picture by looking at the plots produced by the VisualVM profiler.
 
-In the picture below we can observe the heap utilization after some db traversals. At the beggining of the application, the size of the heap is around 300MB. Suddenly, a spike expands it to 1000MB. This is the moment when we extract records from the update file which can't fit in the current heap and so it has to expands. Right after, the size of the heap goes to 1750 MB and that is the moment when we retrieve records from the db. Sudden drops to around 250MB (red color) happen when th GC kicks in to collect retrieved records from the db or file update records which we don't need anymore. As time passes by, we can observe that these blue spikes reach higher and make the heap grow little by little (black lines). I guess that this is happening because there are references that need a 'stop the world' garbage colletion which is not needed at that point.
+In the picture below we can observe the heap utilization after some db traversals. At the beggining of the application, the size of the heap is around 300MB. Suddenly, a spike expands it to 1000MB. This is the moment when we extract records from the update file which can't fit in the current heap and so it has to expand. Right after, the size of the heap goes to 1750 MB and that is the moment when we retrieve records from the db. Sudden drops to around 250MB (red color) happen when th GC kicks in to collect retrieved records from the db or file update records which we don't need anymore. As time passes by, we can observe that these blue spikes reach higher and make the heap grow little by little (black lines). This may be happening because there were references that needed a 'stop the world' garbage colletion which was not needed at that point.
+
 ![heap](https://github.com/chrispyl/lambdawerks_test/blob/master/images/heap.jpg)
 
 Regarding the CPU utilization we can see that the spikes happen when the GC kicks in and also when we query the database.
+
 ![CPU](https://github.com/chrispyl/lambdawerks_test/blob/master/images/cpu.jpg)
 
 ## Results
+
+The results after completing the whole operation.
 
 |Inserts|Updates|
 |-------|-------|
