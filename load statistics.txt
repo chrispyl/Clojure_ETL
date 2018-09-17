@@ -1,0 +1,17 @@
+Heap utilization: 2% Used heap: 100M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: start
+Heap utilization: 3% Used heap: 112M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 1 db traversal
+Heap utilization: 23% Used heap: 864M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 2 db traversal
+Heap utilization: 29% Used heap: 1056M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 3 db traversal
+Heap utilization: 29% Used heap: 1060M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 4 db traversal
+Heap utilization: 20% Used heap: 753M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 5 db traversal
+Heap utilization: 33% Used heap: 1211M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 6 db traversal
+Heap utilization: 34% Used heap: 1253M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 7 db traversal
+Heap utilization: 47% Used heap: 1713M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 8 db traversal
+Heap utilization: 36% Used heap: 1345M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 9 db traversal
+Heap utilization: 23% Used heap: 867M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 10 db traversal
+Heap utilization: 42% Used heap: 1553M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 11 db traversal
+Heap utilization: 22% Used heap: 836M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 12 db traversal
+Heap utilization: 29% Used heap: 1076M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 13 db traversal
+Heap utilization: 34% Used heap: 1263M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 14 db traversal
+Heap utilization: 22% Used heap: 814M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: before 15 db traversal
+Heap utilization: 14% Used heap: 512M Max heap: 3641M CPU utilization: -25% CPU cores: 4 CPU load average: -1.0 Moment of measurement: end
