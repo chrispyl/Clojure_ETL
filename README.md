@@ -41,7 +41,7 @@ To create the queries the library Korma was used. It was selected over clojure.j
 
 ## CPU and memory utilization
 
-The CPU and memory utilization are logged during the operation and saved to a file named ```load statistics.txt``` at the end.
+The CPU and memory utilization are logged during the operation and saved to a [file](https://github.com/chrispyl/lambdawerks_test/blob/master/load%20statistics.txt) named ```load statistics.txt``` at the end (in this example *CPU utilization* and *CPU average load* have negative values because the functions that return these values don't work under Windows where the test took place).
 But we can get a more clear picture by looking at the plots produced by the VisualVM profiler.
 
 In the picture below we can observe the heap utilization after some db traversals. At the beggining of the application, the size of the heap is around 300MB. Suddenly, a spike expands it to 1000MB. This is the moment when we extract records from the update file which can't fit in the current heap and so it has to expand. Right after, the size of the heap goes to 1750 MB and that is the moment when we retrieve records from the db. Sudden drops to around 250MB (red color) happen when th GC kicks in to collect retrieved records from the db or file update records which we don't need anymore. As time passes by, we can observe that these blue spikes reach higher and make the heap grow little by little (black lines). This may be happening because there were references that needed a 'stop the world' garbage colletion which was not needed at that point.
