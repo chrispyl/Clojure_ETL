@@ -117,7 +117,7 @@
 				(let [xml-future (future (-> iteration
 										(extract-xml xml-batch-size)
 										(fill-xml-record-holder xml-record-holder)))
-					 repos-future (future (check-repos insert-repo update-repo repo-limit))]				
+					 repos-future (future (check-repos insert-repo update-repo repo-limit))]	;extract from update-file, and do db operations simultaneously in order to save some seconds			
 					@xml-future)		
 					(doseq [db-offset db-offsets]
 						(-> db-offset
