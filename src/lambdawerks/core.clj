@@ -5,7 +5,7 @@
 			 [clj-time.coerce :as c])
   (:gen-class))
 
-;maps is a set containing maps
+
 (defn maps-transformation 
 	"Takes a set of maps. Returns a map of maps with keys :fname :lname :dob 
 	and values the phones."
@@ -15,7 +15,7 @@
 (defn crosscheck-records
 	"Takes a set of maps representing records in the person table, an atom containing
 	a set of maps representing records of the update file, and an atom containing a
-	set of maps representing the corrected records that need to be updated in the db.
+	vector of maps representing the corrected records that need to be updated in the db.
 	Checks if a part of the records of the update file exist in the db and it handles
 	them appropriately. This function is used only for side effects and the result
 	is thrown away."
@@ -52,8 +52,8 @@
 		(mapv #(xml-record-traversal %))))
 				
 (defn check-repos 
-	"Takes an atom containing a set of maps which will be inserted to db, an atom containing a
-	set of maps representing the corrected records that need to be updated in the db, and a long
+	"Takes an atom containing a vector of maps which will be inserted to db, an atom containing a
+	vector of maps representing the corrected records that need to be updated in the db, and a long
 	number representing the point where the update and insertion repositories (atoms) must be emptied.
 	Checks if the count of the repositories (atoms) have reached the repo-limit and inserts/updates
 	the db with their stuff if it did. This function is used only for side effects and the result
@@ -84,7 +84,7 @@
 			 
 (defn archive-missing-records
 	"Takes an atom containing a set of maps representing records of the update
-	file and an atom containing a set of maps representing records that need to be
+	file and an atom containing a vector of maps representing records that need to be
 	inserted to the db. Fills the repository holding the records which aren't found
 	in the db in the previous db traversal. This function is used only for side
 	effects and the result is thrown away."
