@@ -1,7 +1,7 @@
 (ns lambdawerks.core
 	(:require [lambdawerks.xml-handling :refer [read-xml-chunk xml-record-traversal]]
 			 [lambdawerks.db-handling :refer [multi-select multi-insert multi-update offsets-for-select add-person-ids drop-person-ids]]
-			 [lambdawerks.load-statistics :refer [memory-usage cpu-usage]]
+			 [lambdawerks.utilities :refer [log-stats stats-to-txt]]
 			 [clj-time.coerce :as c])
   (:gen-class))
 
@@ -103,11 +103,14 @@
 		 db-offsets (offsets-for-select records-in-db select-size)
 		 insert-repo (atom [])
 		 update-repo (atom [])
-		 xml-record-holder (atom #{})]
+		 xml-record-holder (atom #{})
+		 load-stats (atom [])]
+		 (log-stats load-stats "start")
 		 (println "adding ids to person table")
 		 (add-person-ids)
 		 (println "ids set")
-		(dotimes [iteration db-traversals]			
+		(dotimes [iteration db-traversals]
+				(log-stats load-stats (str "before " (inc iteration) " db traversal"))
 				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db complete traversal				
 				(println "insert-repo count: " (count @insert-repo))
 				(empty-xml-record-holder xml-record-holder) ;empty stuff from the previous full db traversal				
@@ -127,7 +130,9 @@
 		(multi-insert @insert-repo)
 		(multi-update @update-repo)
 		(drop-person-ids)
-		(println "db update done")))
+		(log-stats load-stats "end")
+		(println "db update done")
+		(stats-to-txt load-stats "load statistics.txt")))
   
 (defn -main [& args]
   )
