@@ -113,7 +113,7 @@
 				(->> (async/<!! xml-channel)
 					(mapv #(xml-record-traversal %))
 					(fill-xml-record-holder xml-record-holder))
-				(check-repos insert-repo update-repo repo-limit)	
+				(async/thread (check-repos insert-repo update-repo repo-limit))	;send the this opeartion to another thread to save some time
 				(doseq [db-offset db-offsets]
 					(-> db-offset
 					  (multi-select select-size)
