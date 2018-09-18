@@ -18,7 +18,7 @@ To begin the operation call the ```update-db``` function in ```core.clj```. Duri
 
 The most expensive operation in this exercise is querying the db and as a result we have to find a way to limit the queries. On the other hand, we are memory limited and maybe we can't fit the whole db with a single query into memory. The middle ground is to process batches of records each time. 
 
-In addtion, parsing the update file is also an expensive operation because all the characters are in the same line. Apart from being a time consuming operation, its content is big and maybe it can't fit into memory. So, the solution again is to process batches of update file records each time. The parsing happens in another thread which communicates with the main thread of execution with a core.async channel.
+In addition, parsing the update file is also an expensive operation because all the characters are in the same line. Apart from being a time consuming operation, its content is big and maybe it can't fit into memory. So, the solution again is to process batches of update file records each time. The parsing happens in another thread which communicates with the main thread of execution with a core.async channel.
 
 Eventually, the general mechanism of operation is that we fetch a batch from the update file and then we fetch batches from the db until we have compared the update file batch with the whole db. This means that for every update file batch a whole db traversal is required. During such a traveresal we store the update file records that must be inserted to the db or update it. At the end of each db traversal we insert to the db and update it with the aforementioned records. The picture below depicts these operations.
 
