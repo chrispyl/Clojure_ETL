@@ -98,8 +98,7 @@
 		 update-repo (atom [])
 		 xml-record-holder (atom #{})
 		 load-stats (atom [])
-		 xml-channel (chan)
-		 xml (chan)]
+		 xml-channel (chan)]
 		 (log-stats load-stats "start")
 		 (async/thread (read-xml-chunk xml-channel xml-batch-size))
 		 (println "adding ids to person table")
