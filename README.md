@@ -1,6 +1,6 @@
 ## Usage
 
-To begin the operation call the ```update-db``` function in ```core.clj```. During the operation, messages describing the its stage will be printed in the console.
+To begin the operation call the ```update-db``` function in ```core.clj```. During the operation, messages describing its stage will be printed in the console.
 
 ## Project structure
 
