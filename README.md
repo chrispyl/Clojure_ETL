@@ -60,7 +60,7 @@ The results after completing the whole operation.
 |-------|-------|
 |500.035|499.982|
 
-With ```db_batch_size = 400.000``` and ```file_update_batch_size = 100.000``` (so we have 15 db traversals), the whole operation took ~38 min.
+With ```db_batch_size = 400.000``` and ```file_update_batch_size = 100.000``` (so we have 15 db traversals), the whole operation took ~40 min.
 
 ## Misc
 
