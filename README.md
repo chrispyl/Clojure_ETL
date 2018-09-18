@@ -25,7 +25,7 @@ Eventually, the general mechanism of operation is that we fetch a batch from the
 ![Data flow](https://github.com/chrispyl/lambdawerks_test/blob/master/images/Data%20flow.jpg)
 
 
-According to the above the total number of queries is ![Equation](https://github.com/chrispyl/lambdawerks_test/blob/master/images/equation.jpg)
+According to the above the total number of *select* queries is ![Equation](https://github.com/chrispyl/lambdawerks_test/blob/master/images/equation.jpg)
 
 The size of the record batch of the db and the update file can be changed, and if we have enough memory we can fit everything in it and complete the whole operation very fast.
 
