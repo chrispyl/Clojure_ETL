@@ -15,11 +15,11 @@
 		(let [tree (xml/parse rdr)
 			 content (:content tree)]
 			(loop [xml-records content]
-				(let [[records rest-records] (take-drop xml-batch-size xml-records)
-					  message (async/<!! xml-channel)]
+				(let [message (async/<!! xml-channel)]
 					(when (= message "Give next batch")
-						(async/>!! xml-channel records)
-						(recur rest-records)))))))
+						(let [[records rest-records] (take-drop xml-batch-size xml-records)] 
+							(async/>!! xml-channel records)
+							(recur rest-records))))))))
 
 (defn xml-record-traversal 
 	"Takes an Element representing an xml record. Returns this record as a map."
