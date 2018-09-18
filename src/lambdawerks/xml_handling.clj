@@ -4,7 +4,7 @@
 			 [lambdawerks.utilities :refer [flip take-drop]]
 			 [clojure.core.async
 						 :as async
-						 :refer [>!! <!! go chan close!]]))
+						 :refer [>!! <!!]]))
 		 
 (defn read-xml-chunk
 	"Takes a channel which will be used for the communication with the main thread of execution
