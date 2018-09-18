@@ -106,14 +106,14 @@
 		 (println "ids set")
 		(dotimes [iteration db-traversals]
 				(log-stats load-stats (str "before " (inc iteration) " db traversal"))
-				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db complete traversal				
+				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db traversal				
 				(println "insert-repo count: " (count @insert-repo))
 				(empty-xml-record-holder xml-record-holder) ;empty stuff from the previous full db traversal				
 				(async/>!! xml-channel "Give next batch")
 				(->> (async/<!! xml-channel)
 					(mapv #(xml-record-traversal %))
 					(fill-xml-record-holder xml-record-holder))
-				(async/thread (check-repos insert-repo update-repo repo-limit))	;send the this opeartion to another thread to save some time
+				(async/thread (check-repos insert-repo update-repo repo-limit))	;send this operation to another thread to save some time
 				(doseq [db-offset db-offsets]
 					(-> db-offset
 					  (multi-select select-size)
