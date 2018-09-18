@@ -37,7 +37,7 @@ To create the queries the library Korma was used. It was selected over clojure.j
 
 ```INSERT``` : Regarding the insertions, they happen fast and the only problem was that they had to be sent in batches of 5000, otherwise the connection to the db was being lost.
 
-```UPDATE``` :To the updates now, updates were very if we tried to do them with the update query. The solution was to create a temporary table, insert them there and from there update the ```person``` table.
+```UPDATE``` :To the updates now, updates were very slow if we tried to do them with the update query. The solution was to create a temporary table, insert them there and from there update the ```person``` table.
 
 ## CPU and memory utilization
 
