@@ -37,3 +37,16 @@
 	[f]
   (fn [& xs]
     (apply f (reverse xs))))
+	
+(defn take-drop 
+	"Takes a long number representing the number of elements we want to take from
+	a lazy sequence and a lazy sequence. Returns a vector with the elements and the
+	rest of the lazy sequence unrealized."
+	[n coll]
+	(let [step (fn [n coll v]
+				  (let [s (seq coll)]
+					(if (and (pos? n) s)
+					  (recur (dec n) (rest s) (conj v (first s)))
+						[v s])))
+		  [v s]	(step n coll [])]
+				[v (lazy-seq s)]))	

@@ -2,7 +2,10 @@
 	(:require [lambdawerks.xml-handling :refer [read-xml-chunk xml-record-traversal]]
 			 [lambdawerks.db-handling :refer [multi-select multi-insert multi-update offsets-for-select add-person-ids drop-person-ids]]
 			 [lambdawerks.utilities :refer [log-stats stats-to-txt]]
-			 [clj-time.coerce :as c])
+			 [clj-time.coerce :as c]
+			 [clojure.core.async
+						 :as async
+						 :refer [>!! <!! go chan close!]])
   (:gen-class))
 
 
@@ -40,16 +43,6 @@
 	of maps, where the date instances have been replaced by strings of the YYYY-MM-DD part only."
 	[db-records]
 	(mapv #(update % :dob (fn [date] (if date (.toString date) nil))) db-records))				
-
-(defn extract-xml
-	"Takes two long numbers showing the current db traversal number starting from zero
-	and how many records we will extract each time we read the update file. Returns
-	a vector of maps representing records of the update file."
-	[iteration xml-batch-size]
-	 (->>(read-xml-chunk 
-			xml-batch-size
-			(* iteration xml-batch-size))
-		(mapv #(xml-record-traversal %))))
 				
 (defn check-repos 
 	"Takes an atom containing a vector of maps which will be inserted to db, an atom containing a
@@ -79,7 +72,7 @@
 	the atom holding the records of a part of the update file with new records
 	from the update file. This function is used only for side effects and the
 	result is thrown away."
-	[xml-records xml-record-holder]
+	[xml-record-holder xml-records]
 	(apply swap! xml-record-holder conj xml-records))			 
 			 
 (defn archive-missing-records
@@ -104,8 +97,11 @@
 		 insert-repo (atom [])
 		 update-repo (atom [])
 		 xml-record-holder (atom #{})
-		 load-stats (atom [])]
+		 load-stats (atom [])
+		 xml-channel (chan)
+		 xml (chan)]
 		 (log-stats load-stats "start")
+		 (async/thread (read-xml-chunk xml-channel xml-batch-size))
 		 (println "adding ids to person table")
 		 (add-person-ids)
 		 (println "ids set")
@@ -114,22 +110,24 @@
 				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db complete traversal				
 				(println "insert-repo count: " (count @insert-repo))
 				(empty-xml-record-holder xml-record-holder) ;empty stuff from the previous full db traversal				
-				(let [xml-future (future (-> iteration
-										(extract-xml xml-batch-size)
-										(fill-xml-record-holder xml-record-holder)))
-					 repos-future (future (check-repos insert-repo update-repo repo-limit))]	;extract from update-file, and do db operations simultaneously in order to save some seconds			
-					@xml-future)		
-					(doseq [db-offset db-offsets]
-						(-> db-offset
-						  (multi-select select-size)
-						  (format-dates)
-						  (set)
-						  (crosscheck-records xml-record-holder update-repo))
-						(println "offset: " db-offset ", update-repo count: " (count @update-repo) ", xml-holder count: " (count @xml-record-holder))))
+				(async/>!! xml-channel "Give next batch")
+				(->> (async/<!! xml-channel)
+					(mapv #(xml-record-traversal %))
+					(fill-xml-record-holder xml-record-holder))
+				(check-repos insert-repo update-repo repo-limit)	
+				(doseq [db-offset db-offsets]
+					(-> db-offset
+					  (multi-select select-size)
+					  (format-dates)
+					  (set)
+					  (crosscheck-records xml-record-holder update-repo))
+					(println "offset: " db-offset ", update-repo count: " (count @update-repo) ", xml-holder count: " (count @xml-record-holder))))
 		(archive-missing-records xml-record-holder insert-repo) ;after the last db traversal we have to insert the missing records in the repo
 		(multi-insert @insert-repo)
 		(multi-update @update-repo)
-		(drop-person-ids)
+		(drop-person-ids)()
+		(async/>!! xml-channel "End") ;send it in order to be able to stop waiting
+		(async/close! xml-channel)
 		(log-stats load-stats "end")
 		(println "db update done")
 		(stats-to-txt load-stats "load statistics.txt")))
