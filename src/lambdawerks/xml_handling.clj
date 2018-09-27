@@ -2,9 +2,7 @@
 	(:require [clojure.data.xml :as xml]
 			 [clojure.java.io :as io]
 			 [lambdawerks.utilities :refer [flip take-drop]]
-			 [clojure.core.async
-						 :as async
-						 :refer [>!! <!!]]))
+			 [clojure.core.async :refer [>!! <!!]]))
 		 
 (defn read-xml-chunk
 	"Takes a channel which will be used for the communication with the main thread of execution
@@ -15,10 +13,10 @@
 		(let [tree (xml/parse rdr)
 			 content (:content tree)]
 			(loop [xml-records content]
-				(let [message (async/<!! xml-channel)]
+				(let [message (<!! xml-channel)]
 					(when (= message "Give next batch")
 						(let [[records rest-records] (take-drop xml-batch-size xml-records)] 
-							(async/>!! xml-channel records)
+							(>!! xml-channel records)
 							(recur rest-records))))))))
 
 (defn xml-record-traversal 

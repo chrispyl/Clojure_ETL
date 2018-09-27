@@ -3,9 +3,7 @@
 			 [lambdawerks.db-handling :refer [multi-select multi-insert multi-update offsets-for-select add-person-ids drop-person-ids]]
 			 [lambdawerks.utilities :refer [log-stats stats-to-txt]]
 			 [clj-time.coerce :as c]
-			 [clojure.core.async
-						 :as async
-						 :refer [>!! <!! go chan close!]])
+			 [clojure.core.async :refer [>!! <!! go chan close! thread]])
   (:gen-class))
 
 
@@ -100,7 +98,7 @@
 		 load-stats (atom [])
 		 xml-channel (chan)]
 		 (log-stats load-stats "start")
-		 (async/thread (read-xml-chunk xml-channel xml-batch-size))
+		 (thread (read-xml-chunk xml-channel xml-batch-size))
 		 (println "adding ids to person table")
 		 (add-person-ids)
 		 (println "ids set")
@@ -109,11 +107,11 @@
 				(archive-missing-records xml-record-holder insert-repo) ;insert stuff after a db traversal				
 				(println "insert-repo count: " (count @insert-repo))
 				(empty-xml-record-holder xml-record-holder) ;empty stuff from the previous full db traversal				
-				(async/>!! xml-channel "Give next batch")
-				(->> (async/<!! xml-channel)
+				(>!! xml-channel "Give next batch")
+				(->> (<!! xml-channel)
 					(mapv #(xml-record-traversal %))
 					(fill-xml-record-holder xml-record-holder))
-				(async/thread (check-repos insert-repo update-repo repo-limit))	;send this operation to another thread to save some time
+				(thread (check-repos insert-repo update-repo repo-limit))	;send this operation to another thread to save some time
 				(doseq [db-offset db-offsets]
 					(-> db-offset
 					  (multi-select select-size)
@@ -125,8 +123,8 @@
 		(multi-insert @insert-repo)
 		(multi-update @update-repo)
 		(drop-person-ids)()
-		(async/>!! xml-channel "End") ;send it in order to be able to stop waiting
-		(async/close! xml-channel)
+		(>!! xml-channel "End") ;send it in order to be able to stop waiting
+		(close! xml-channel)
 		(log-stats load-stats "end")
 		(println "db update done")
 		(stats-to-txt load-stats "load statistics.txt")))
